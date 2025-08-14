@@ -1,6 +1,6 @@
 --- a/arch/arm/dts/Makefile
 +++ b/arch/arm/dts/Makefile
-@@ -87,6 +87,25 @@ dtb-$(CONFIG_ROCKCHIP_RK3368) += \
+@@ -87,6 +87,26 @@ dtb-$(CONFIG_ROCKCHIP_RK3368) += \
  	rk3368-geekbox.dtb \
  	rk3368-px5-evb.dtb \
  
@@ -18,7 +18,8 @@
 +	rk3568-mrkaio-m68s.dtb \
 +	rk3568-photonicat.dtb \
 +	rk3568-nsy-g16-plus.dtb \
-+	rk3568-nsy-g68-plus.dtb 	
++	rk3568-nsy-g68-plus.dtb \
++ rk3568-bdy-g18-pro.dtb
 +
 +dtb-$(CONFIG_ROCKCHIP_RK3588) += \
 +	rk3588-cyber3588-aib.dtb
