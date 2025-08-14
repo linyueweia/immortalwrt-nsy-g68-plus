@@ -90,7 +90,8 @@ lyt,t68m)
 	set_interface_core 4 "lan3"
 	set_interface_core 8 "lan4"
 	;;
-nsy,g16-plus)
+nsy,g16-plus|\
+bdy,g18-pro)
 	set_interface_core 8 "eth0"
 	set_interface_core 4 "eth1"
 	set_interface_core 2 "mt7615e"
