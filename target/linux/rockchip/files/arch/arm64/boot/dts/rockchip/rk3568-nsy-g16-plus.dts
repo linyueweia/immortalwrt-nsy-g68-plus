@@ -711,7 +711,7 @@
 		status = "okay";
 };
 
-&combphy2 { 
+&combphy2 {
 		status = "okay";
 };
 
@@ -1043,4 +1043,3 @@
 	status = "okay";
 	vref-supply = <&vcc1v8_adc>;
 };
-
