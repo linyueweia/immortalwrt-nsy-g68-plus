@@ -268,6 +268,17 @@ define Device/nsy_g68-plus
 endef
 TARGET_DEVICES += nsy_g68-plus
 
+define Device/bdy_g18-pro
+  DEVICE_VENDOR := BDY
+  DEVICE_MODEL := G18-PRO
+  SOC := rk3568
+  DEVICE_DTS := rockchip/rk3568-bdy-g18-pro
+  UBOOT_DEVICE_NAME := bdy-g18-pro-rk3568
+  BOOT_FLOW := pine64-img
+  DEVICE_PACKAGES := kmod-mt7615-firmware kmod-switch-rtl8367b wpad-openssl
+endef
+TARGET_DEVICES += bdy_g18-pro
+
 define Device/mmbox_anas3035
   DEVICE_VENDOR := MMBOX
   DEVICE_MODEL := ANAS3035

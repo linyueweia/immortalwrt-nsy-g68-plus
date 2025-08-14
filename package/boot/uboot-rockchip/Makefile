@@ -322,6 +322,13 @@ define U-Boot/nsy-g68-plus-rk3568
     nsy_g68-plus
 endef
 
+define U-Boot/bdy-g18-pro-rk3568
+  $(U-Boot/rk3568/Default)
+  NAME:=BDY G18 PRO
+  BUILD_DEVICES:= \
+    bdy_g18-pro
+endef
+
 # RK3588 boards
 
 define U-Boot/rk3588/Default
@@ -425,6 +432,7 @@ UBOOT_TARGETS := \
   mrkaio-m68s-rk3568 \
   nsy-g16-plus-rk3568 \
   nsy-g68-plus-rk3568 \
+  bdy-g18-pro-rk3568 \
   nanopi-r5c-rk3568 \
   nanopi-r5s-rk3568 \
   photonicat-rk3568 \
