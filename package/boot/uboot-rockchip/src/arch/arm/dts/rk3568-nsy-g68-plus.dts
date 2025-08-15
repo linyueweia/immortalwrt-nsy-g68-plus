@@ -715,7 +715,6 @@
 &gmac0 {
 	status = "okay";
 	phy-mode = "rgmii";
-	clock_in_out = "output";
 	snps,reset-gpio = <&gpio1 RK_PB0 GPIO_ACTIVE_LOW>;
 	snps,reset-active-low;
 	snps,reset-delays-us = <0 20000 100000>;
@@ -1024,4 +1023,3 @@
 	status = "okay";
 	vref-supply = <&vcc1v8_adc>;
 };
-
