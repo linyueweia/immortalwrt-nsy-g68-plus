@@ -32,6 +32,10 @@ jobs:
 
           # 复制配置并生成完整配置
           cp $REPO_ROOT/openwrt/configs/nsy_g68-plus.config .config
+          echo "=== 使用的配置文件 ==="
+          echo "源配置: $REPO_ROOT/openwrt/configs/nsy_g68-plus.config"
+          ls -la $REPO_ROOT/openwrt/configs/
+          echo "SHA256: $(sha256sum $REPO_ROOT/openwrt/configs/nsy_g68-plus.config | cut -c1-64)"
           make defconfig
           make oldconfig MAKEFLAGS=-y
 
