@@ -29,10 +29,10 @@ jobs:
       - name: Build
         run: |
           set -e
-          REPO_ROOT=$PWD
+          
+          cd $GITHUB_WORKSPACE/openwrt
+          REPO_ROOT=$GITHUB_WORKSPACE/openwrt
           echo "Repo root: $REPO_ROOT"
-
-          cd $REPO_ROOT/openwrt
 
           # 1. 复制 feeds 配置（.feeds.conf 有 istore）
           echo "=== 复制 feeds 配置 ==="
