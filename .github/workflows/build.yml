@@ -33,14 +33,14 @@ jobs:
           
           echo "Repo: $REPO"
 
-          # 跳过 feeds update，直接 install（使用本地已检出的 feeds）
+          # 更新并安装 feeds
+          ./scripts/feeds update -a
           ./scripts/feeds install -a
 
           # 复制设备配置
           cp $REPO/configs/nsy_g68-plus.config .config
 
-          # 生成完整配置
-          make defconfig
+          # 跳过 make defconfig，直接 oldconfig 避免触发 glob 检查
           make oldconfig MAKEFLAGS=-y
 
           # 禁用 ruby
