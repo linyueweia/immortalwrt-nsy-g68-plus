@@ -28,20 +28,21 @@ jobs:
 
       - name: Build
         run: |
-          ORG_ROOT=$GITHUB_WORKSPACE
-          cd $ORG_ROOT/openwrt
+          # 仓库已检出到 $GITHUB_WORKSPACE/openwrt/
+          REPO=$GITHUB_WORKSPACE/openwrt
+          cd $REPO
           
-          echo "Repo root: $ORG_ROOT/openwrt"
+          echo "Repo: $REPO"
 
-          # 复制 feeds 配置
-          cp $ORG_ROOT/.feeds.conf $ORG_ROOT/feeds.conf
+          # .feeds.conf 在仓库根目录（$REPO/.feeds.conf）
+          cp $REPO/.feeds.conf $REPO/feeds.conf
 
           # 更新并安装 feeds
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
           # 复制设备配置
-          cp $ORG_ROOT/openwrt/configs/nsy_g68-plus.config .config
+          cp $REPO/configs/nsy_g68-plus.config .config
 
           # 生成完整配置
           make defconfig
