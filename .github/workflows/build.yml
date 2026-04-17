@@ -11,6 +11,8 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 300
+    
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,38 +34,34 @@ jobs:
           cd $REPO
           
           echo "Repo: $REPO"
+          echo "SHA256: $(sha256sum $REPO/configs/nsy_g68-plus.config | cut -c1-64)"
 
-          # 跳过 feeds update/install — 直接用已有的
-          
           # 复制设备配置
           cp $REPO/configs/nsy_g68-plus.config .config
 
-          # 跳过 defconfig，直接 oldconfig
+          # 禁用 rust（必须在 defconfig 之前）
+          sed -i '/^CONFIG_RUST[=_]/d' .config
+          echo "# CONFIG_RUST is not set" >> .config
+          echo "Rust 已禁用"
+
+          # 生成完整配置（关键：必须先 defconfig 再 oldconfig）
+          make defconfig
           make oldconfig MAKEFLAGS=-y
 
-          # 禁用 ruby
-          sed -i 's/^CONFIG_PACKAGE_ruby=.*/# CONFIG_PACKAGE_ruby is not set/' .config
-          sed -i '/^CONFIG_PACKAGE_ruby-/s/=y/=n/' .config
+          # 再次禁用 rust（防止 oldconfig 重新启用）
+          sed -i '/^CONFIG_RUST[=_]/d' .config
+          echo "# CONFIG_RUST is not set" >> .config
 
-          # 禁用 rust
-          sed -i 's/^CONFIG_PACKAGE_rust=.*/# CONFIG_PACKAGE_rust is not set/' .config
-          sed -i '/CONFIG_RUST_SCCACHE/d' .config
-
-          # 强制启用 LuCI
-          sed -i '/^CONFIG_PACKAGE_luci=.*/d' .config
-          echo "CONFIG_PACKAGE_luci=y" >> .config
-
-          # 强制启用 istore
-          sed -i '/^CONFIG_PACKAGE_luci-app-store=.*/d' .config
+          # 强制启用 LuCI 和 istore
+          sed -i '/CONFIG_PACKAGE_luci-app-store/d' .config
           echo "CONFIG_PACKAGE_luci-app-store=y" >> .config
 
-          # 验证配置
-          grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备配置正确"
-          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 已配置"
-          grep -F "CONFIG_PACKAGE_luci=y" .config && echo "✅ LuCI 已配置"
-          grep "CONFIG_PACKAGE_rust is not set" .config && echo "✅ rust 已禁用"
+          # 验证
+          echo "=== 配置验证 ==="
+          grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备正确" || echo "❌ 设备缺失"
+          (grep -E "^CONFIG_RUST[=_]" .config | grep -v "^#") && echo "❌ rust 启用" || echo "✅ rust 禁用"
+          grep "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 启用" || echo "❌ istore 未启用"
 
-          # 下载并编译
           make download -j8
           make -j1 world
 
@@ -71,5 +69,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: firmware
+          name: firmware-${{ github.run_number }}
           path: openwrt/bin/targets/rockchip/armv8/*.img.gz
