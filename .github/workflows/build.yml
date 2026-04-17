@@ -15,7 +15,6 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: openwrt
-          submodules: true
 
       - name: Install deps
         run: |
@@ -39,7 +38,7 @@ jobs:
           echo "=== 复制 feeds 配置 ==="
           cp $REPO_ROOT/.feeds.conf $REPO_ROOT/feeds.conf
 
-          # 2. 更新并安装 feeds
+          # 2. 更新并安装 feeds（使用网络下载，不用 submodule）
           echo "=== 更新并安装 feeds ==="
           ./scripts/feeds update -a
           ./scripts/feeds install -a
@@ -66,12 +65,12 @@ jobs:
           sed -i 's/^CONFIG_PACKAGE_rust=.*/# CONFIG_PACKAGE_rust is not set/' .config
           sed -i '/CONFIG_RUST_SCCACHE/d' .config
 
-          # 7. 强制启用 LuCI（如果被覆盖则恢复）
+          # 7. 强制启用 LuCI
           echo "=== 强制启用 LuCI ==="
           sed -i '/^CONFIG_PACKAGE_luci=.*/d' .config
           echo "CONFIG_PACKAGE_luci=y" >> .config
 
-          # 8. 强制启用 istore（如果被覆盖则恢复）
+          # 8. 强制启用 istore
           echo "=== 强制启用 istore ==="
           sed -i '/^CONFIG_PACKAGE_luci-app-store=.*/d' .config
           echo "CONFIG_PACKAGE_luci-app-store=y" >> .config
