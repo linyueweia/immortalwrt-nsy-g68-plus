@@ -28,17 +28,12 @@ jobs:
 
       - name: Build
         run: |
-          # 仓库已检出到 $GITHUB_WORKSPACE/openwrt/
           REPO=$GITHUB_WORKSPACE/openwrt
           cd $REPO
           
           echo "Repo: $REPO"
 
-          # .feeds.conf 在仓库根目录（$REPO/.feeds.conf）
-          cp $REPO/.feeds.conf $REPO/feeds.conf
-
-          # 更新并安装 feeds
-          ./scripts/feeds update -a
+          # 跳过 feeds update，直接 install（使用本地已检出的 feeds）
           ./scripts/feeds install -a
 
           # 复制设备配置
