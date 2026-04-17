@@ -15,60 +15,97 @@ jobs:
       - uses: actions/checkout@v4
         with:
           path: openwrt
+          submodules: true
 
       - name: Install deps
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc
           sudo apt-get update
-          sudo apt-get install -y build-essential clang flex bison gperf texinfo libncurses-dev python3 libssl-dev gettext zlib1g-dev git curl unzip gawk diffutils xz-utils bc automake ccache libtool m4 python3-pyelftools
+          sudo apt-get install -y \
+            build-essential clang flex bison gperf texinfo \
+            libncurses-dev python3 libssl-dev gettext zlib1g-dev \
+            git curl unzip gawk diffutils xz-utils bc automake \
+            ccache libtool m4 python3-pyelftools
 
       - name: Build
         run: |
+          set -e
           REPO_ROOT=$PWD
           echo "Repo root: $REPO_ROOT"
 
-          # 进入源码目录（仓库2本身就是源码）
           cd $REPO_ROOT/openwrt
 
-          # 更新并安装 feeds
+          # 1. 复制 feeds 配置（.feeds.conf 有 istore）
+          echo "=== 复制 feeds 配置 ==="
+          cp $REPO_ROOT/.feeds.conf $REPO_ROOT/feeds.conf
+
+          # 2. 更新并安装 feeds
+          echo "=== 更新并安装 feeds ==="
           ./scripts/feeds update -a
           ./scripts/feeds install -a
 
-          # 复制配置并生成完整配置
-          cp $REPO_ROOT/openwrt/configs/nsy_g68-plus.config .config
+          # 3. 复制设备配置
           echo "=== 使用的配置文件 ==="
-          echo "源配置: $REPO_ROOT/openwrt/configs/nsy_g68-plus.config"
-          ls -la $REPO_ROOT/openwrt/configs/
-          echo "SHA256: $(sha256sum $REPO_ROOT/openwrt/configs/nsy_g68-plus.config | cut -c1-64)"
+          echo "源配置: $REPO_ROOT/configs/nsy_g68-plus.config"
+          ls -la $REPO_ROOT/configs/
+          echo "SHA256: $(sha256sum $REPO_ROOT/configs/nsy_g68-plus.config | cut -c1-64)"
+          cp $REPO_ROOT/configs/nsy_g68-plus.config .config
+
+          # 4. 生成完整配置
+          echo "=== 生成完整配置 ==="
           make defconfig
           make oldconfig MAKEFLAGS=-y
 
-          # 强制禁用 rust host 包（避免编译失败）
-          # 用 CONFIG_PACKAGE_rust=n 强制禁用，不管原来是什么
+          # 5. 强制禁用 ruby（依赖 rust/host，会导致编译失败）
+          echo "=== 禁用 ruby ==="
+          sed -i 's/^CONFIG_PACKAGE_ruby=.*/# CONFIG_PACKAGE_ruby is not set/' .config
+          sed -i '/^CONFIG_PACKAGE_ruby-/s/=y/=n/' .config
+
+          # 6. 强制禁用 rust host 包（避免编译失败）
           echo "=== 禁用 rust host 包 ==="
           sed -i 's/^CONFIG_PACKAGE_rust=.*/# CONFIG_PACKAGE_rust is not set/' .config
           sed -i '/CONFIG_RUST_SCCACHE/d' .config
 
-          # 强制写入 LuCI 配置
-          echo "=== 强制写入 LuCI 配置 ==="
+          # 7. 强制启用 LuCI（如果被覆盖则恢复）
+          echo "=== 强制启用 LuCI ==="
           sed -i '/^CONFIG_PACKAGE_luci=.*/d' .config
           echo "CONFIG_PACKAGE_luci=y" >> .config
 
-          # 强制写入 istore 配置
-          echo "=== 强制写入 istore 配置 ==="
+          # 8. 强制启用 istore（如果被覆盖则恢复）
+          echo "=== 强制启用 istore ==="
           sed -i '/^CONFIG_PACKAGE_luci-app-store=.*/d' .config
           echo "CONFIG_PACKAGE_luci-app-store=y" >> .config
 
-          echo "=== 验证设备配置 ==="
-          grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备配置正确" || echo "❌ 设备配置缺失"
-          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 已配置" || echo "⚠️ istore 未配置"
-          grep -F "CONFIG_PACKAGE_luci=y" .config && echo "✅ LuCI 已配置" || echo "⚠️ LuCI 未配置"
-          grep "CONFIG_PACKAGE_rust is not set" .config && echo "✅ rust 已禁用" || echo "⚠️ rust 未禁用"
+          # 9. 验证配置
+          echo ""
+          echo "=== 配置验证结果 ==="
+          grep "CONFIG_TARGET_rockchip_armv8_DEVICE_nsy_g68-plus=y" .config && echo "✅ 设备配置正确" || { echo "❌ 设备配置缺失"; exit 1; }
+          grep -F "CONFIG_PACKAGE_luci-app-store=y" .config && echo "✅ istore 已配置" || { echo "⚠️ istore 未配置"; }
+          grep -F "CONFIG_PACKAGE_luci=y" .config && echo "✅ LuCI 已配置" || { echo "⚠️ LuCI 未配置"; }
+          grep "CONFIG_PACKAGE_rust is not set" .config && echo "✅ rust 已禁用" || { echo "⚠️ rust 未禁用"; }
+          echo ""
 
+          # 10. 下载源码
+          echo "=== 下载源码 ==="
           make download -j8
+
+          # 11. 正式编译
+          echo "=== 开始编译（单线程） ==="
           make -j1 world
 
-      - uses: actions/upload-artifact@v4
+      - name: Upload firmware
+        if: success()
+        uses: actions/upload-artifact@v4
         with:
           name: firmware
           path: openwrt/bin/targets/rockchip/armv8/*.img.gz
+
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            openwrt/.config
+            openwrt/logs/
+          retention-days: 7
