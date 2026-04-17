@@ -32,7 +32,13 @@ jobs:
 
           # 更新 feeds（istore 已在 feeds.conf.default 中）
           ./scripts/feeds update -a
-          ./scripts/feeds install -a
+
+          # 手动安装必要包（不安装全部，避免大量警告）
+          ./scripts/feeds install -a -p luci
+          ./scripts/feeds install -a -p packages
+          ./scripts/feeds install -a -p routing
+          ./scripts/feeds install -a -p telephony
+          ./scripts/feeds install -a -p istore
 
           # 复制配置并生成完整配置
           cp $REPO_ROOT/openwrt/configs/nsy_g68-plus.config .config
@@ -44,7 +50,6 @@ jobs:
           sed -i "/# CONFIG_PACKAGE_rust is not set/d" .config
           sed -i "/CONFIG_RUST_SCCACHE/d" .config
           echo "# CONFIG_PACKAGE_rust is not set" >> .config
-
 
           # 强制写入 istore 配置
           echo "=== 修复 istore 配置 ==="
